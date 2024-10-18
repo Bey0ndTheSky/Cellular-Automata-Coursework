@@ -35,28 +35,24 @@ void Question5::runSingleSimulation(PatternRecogniser pr) {
 	Grid grid(height, width, alive, seed);
 	int gen_count = 0;
 	while (!patternFound.load()) {
-		if (pr.getName() != "lwss") {
+	for (int i = 0, frames = pr.getNumberOfFrames(); i < frames; i++)
+	{
+		if (pr.findPatternEX(grid)) {
 			std::lock_guard<std::mutex> lock(ern_mutex);
+			if (patternFound.load()) goto FOUND;
 			std::cout << grid << std::endl;
-		}
-		for (int i = 0, frames = pr.getNumberOfFrames(); i < frames; i++)
-		{
-			if (pr.findPatternEX(grid)) {
-				std::lock_guard<std::mutex> lock(ern_mutex);
-				if (patternFound.load()) goto FOUND;
-				std::cout << grid << std::endl;
-
-				patternFound.store(true);
-				grid = Grid(height, width, alive, seed, gen_count);
-				FileManager::getInstance().saveSimToFile(pr.getName() + "/ERN/ERN " + std::to_string(height * width + alive), grid, seed, gen_count, alive);
-				FileManager::getInstance().saveSimToFile(pr.getName() + "/ERN/CurrentERN", grid, seed, gen_count, alive);
-				patternFound.store(true);
-				Cycle(grid, pr.getNumberOfFrames(), 500);
-				std::cout << pr.getName() << " with ERN of " << pr.calculateERN() << " in " << sim_counter.load() << " iterations" << std::endl;
-				system("pause");
-				goto FOUND;
+	
+			patternFound.store(true);
+			grid = Grid(height, width, alive, seed, gen_count);
+			FileManager::getInstance().saveSimToFile(pr.getName() + "/ERN/ERN " + std::to_string(height * width + alive), grid, seed, gen_count, alive);
+			FileManager::getInstance().saveSimToFile(pr.getName() + "/ERN/CurrentERN", grid, seed, gen_count, alive);
+			patternFound.store(true);
+			Cycle(grid, pr.getNumberOfFrames(), 500);
+			std::cout << pr.getName() << " with ERN of " << pr.calculateERN() << " in " << sim_counter.load() << " iterations" << std::endl;
+			system("pause");
+			goto FOUND;
 			}
-			grid.step();
+		grid.step();
 		}
 		sim_counter.fetch_add(1);
 		gen_count = grid.getGeneratedCount();
